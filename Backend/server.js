@@ -23,7 +23,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 
 // 1️⃣ Auth Routes
-app.post('/api/auth/register', async (req, res) => {
+app.post('/signup', async (req, res) => {
     // Register logic here
     let {username,email, password} = req.body;
     if (!username || !password || !email) {
@@ -42,7 +42,7 @@ app.post('/api/auth/register', async (req, res) => {
     res.send("Register endpoint");
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/login', async (req, res) => {
     // Login logic here
     const {email, password} = req.body;
     if (!email || !password) {
@@ -64,17 +64,38 @@ app.post('/api/auth/login', async (req, res) => {
 // 2️⃣ User Routes
 app.get('/api/users/:id', async (req, res) => {
     // Fetch user profile
-    res.send(`Fetch user by ID: ${req.params.id}`);
+    const user = await User.findById(req.params.id);
+    if(!user){
+        return res.status(404).send("User not found");
+    }
+    res.send(`Fetch user by ID: ${user}`);
 });
 
 app.put('/api/users/:id', async (req, res) => {
     // Update user
+    const {username, password, email} = req.body;
+     if(!username || !password || !email) {
+        return res.status(400).send("Username, email, and password are required");
+    }
+    const user = await User.findByIdAndUpdate(req.params.id, {
+        username,
+        email,
+        password: bcrypt.hashSync(password, 10)
+    }, { new: true });
+
+    if (!user) {
+        return res.status(404).send("User not found");
+    }
     res.send(`Update user by ID: ${req.params.id}`);
 });
 
 // 3️⃣ Message Routes
 app.post('/api/messages/send', async (req, res) => {
     // Send message
+    const {senderId, receiverId, content} = req.body;
+    if (!senderId || !receiverId || !content) {
+        return res.status(400).send("Sender ID, receiver ID, and content are required");
+    }
     res.send("Message sent");
 });
 
